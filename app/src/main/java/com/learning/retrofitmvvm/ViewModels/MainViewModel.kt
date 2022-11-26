@@ -1,29 +1,52 @@
-package com.learning.retrofitmvvm.ViewModels
+package com.lea
 
-import androidx.lifecycle.LiveData
+import android.util.Log
+import javax.security.auth.callback.Callback
+
+
+
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.learning.retrofitmvvm.Model.ResponseItem
-import com.learning.retrofitmvvm.Model.ResponsePhotos
-import com.learning.retrofitmvvm.Repository.PhotoRepository
 import com.learning.retrofitmvvm.api.PhotoService
-import com.learning.retrofitmvvm.api.RetrofitHelper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.learning.retrofitmvvm.api.RetrofitInstance
+import retrofit2.Call
+import retrofit2.Response
 
-class MainViewModel(private val repository: PhotoRepository) : ViewModel() {
+class MainViewModel : ViewModel() {
+
+    lateinit var liveDatalist: MutableLiveData<List<ResponseItem>>
+
+
     init {
-        viewModelScope.launch(Dispatchers.IO){
-            repository.getPhotos()
+            liveDatalist = MutableLiveData()
         }
+
+    fun getliveDataObserver(): MutableLiveData<List<ResponseItem>> {
+        return liveDatalist
     }
 
-    val photos : LiveData<List<ResponseItem>>
-    get() = repository.photos
+    fun makeAPICall(){
+        val retroInstance = RetrofitInstance.getRetrofitInstance()
+        val retroService = retroInstance.create(PhotoService::class.java)
+        val call = retroService.getPhotos()
+        call.enqueue(object :retrofit2.Callback<List<ResponseItem>>{
+            override fun onResponse(
+                call: Call<List<ResponseItem>>,
+                response: Response<List<ResponseItem>>
+            ) {
+                liveDatalist.postValue(response.body())
+            }
 
-//    fun makeAPICall(){
-//        val retrofitHelper = RetrofitHelper.getInstance()
-//        val photoService = retrofitHelper.create(PhotoService::class.java)
-//        val call = photoService.getPhotos()
-//    }
-}
+            override fun onFailure(call: Call<List<ResponseItem>>, t: Throwable) {
+                Log.d("Somehting wrongggg",t.localizedMessage.toString())
+            }
+        })
+
+    }
+
+    }
+
+
+
+
